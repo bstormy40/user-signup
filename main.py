@@ -2,15 +2,11 @@ import webapp2
 import re
 import cgi
 
-signup_form = """"
+signup_form = """
 <!DOCTYPE html>
 <html>
     <head>
-        <style>
-            .error {
-                color: red;
-            }
-        </style>
+        <title>User Signup</title>
     </head>
     <body>
     <h1>Signup</h1>
@@ -19,29 +15,29 @@ signup_form = """"
                 <tr>
                     <td><label for="username">Username</label></td>
                     <td>
-                        <input name="username" type="text" value="" required>
-                        <span class="error"></span>
+                        <input name="username" type="text" value="%(username)s" required>
+                        <span style="color: red">%(e_name)s</span>
                     </td>
                 </tr>
                 <tr>
                     <td><label for="password">Password</label></td>
                     <td>
                         <input name="password" type="password" required>
-                        <span class="error"></span>
+                        <span style="color: red">%(e_pass)s</span>
                     </td>
                 </tr>
                 <tr>
                     <td><label for="verify">Verify Password</label></td>
                     <td>
                         <input name="verify" type="password" required>
-                        <span class="error"></span>
+                        <span style="color: red">%(e_verify)s</span>
                     </td>
                 </tr>
                 <tr>
                     <td><label for="email">Email (optional)</label></td>
                     <td>
-                        <input name="email" type="email" value="">
-                        <span class="error"></span>
+                        <input name="email" type="email" value="%(email)s">
+                        <span style="color: red">%(e_email)s</span>
                     </td>
                 </tr>
             </table>
@@ -53,7 +49,7 @@ signup_form = """"
 welcome_form = """<!DOCTYPE html>
 <html>
 	<head>
-		<title>Unit 2 Signup - Welcome</title>
+		<title>Welcome</title>
 	</head>
 	<body>
 		<h2>Welcome, %s!</h2>
@@ -79,35 +75,39 @@ def valid_email(s):
     else:
         return EMAIL_RE.match(s)
 
+def match_password(p1, p2):
+    return p1 == p2
 
 class Signup(webapp2.RequestHandler):
     def write_form(self, username="", email="", e_name="", e_pass="", e_verify="", e_email=""):
 		self.response.out.write(signup_form % {"username": escape_html(username), "email": escape_html(email), "e_name": e_name, "e_pass": e_pass, "e_verify": e_verify, "e_email": e_email})
+
+
 
     def get(self):
         self.write_form()
 
     def post(self):
 		user_name = self.request.get('username')
-		user_pass = self.request.get('password')
+		user_password = self.request.get('password')
 		user_verify = self.request.get('verify')
 		user_email = self.request.get('email')
 
-		name = valid_name(user_name)
-		password = valid_pass(user_pass)
-		verify = valid_pass(user_verify)
+		name = valid_username(user_name)
+		password = valid_password(user_password)
+		verify = valid_password(user_verify)
 		email = valid_email(user_email)
 
 		e_name = ''
-		e_pass = ''
+		e_password = ''
 		e_verify = ''
 		e_email = ''
 
 		if not name:
 			e_name = 'That is not a valid name'
 		if not password:
-			e_pass = 'That is not a valid password'
-		if not match_pass(user_pass, user_verify):
+			e_password = 'That is not a valid password'
+		if not match_password(user_password, user_verify):
 			e_verify = 'The two passwords do not match'
 		if not email:
 			e_email = 'That is not a valid email'
@@ -115,7 +115,7 @@ class Signup(webapp2.RequestHandler):
 		if password and (not e_verify) and name and email:
 			self.redirect('/welcome?username=%s' % user_name)
 		else:
-			self.write_form(user_name, user_email, e_name, e_pass, e_verify, e_email)
+			self.write_form(user_name, user_email, e_name, e_password, e_verify, e_email)
 
 class WelcomeHandler(webapp2.RequestHandler):
 	def get(self):
@@ -123,6 +123,6 @@ class WelcomeHandler(webapp2.RequestHandler):
 		self.response.out.write(welcome_form % username)
 
 app = webapp2.WSGIApplication([
-    ('/', Signup)
+    ('/', Signup),
     ('/welcome', WelcomeHandler)
 ], debug=True)
